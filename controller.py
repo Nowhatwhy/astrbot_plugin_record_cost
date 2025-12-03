@@ -1,5 +1,5 @@
-from querty_dto import QueryDTO
-import db
+from .querty_dto import QueryDTO
+from . import db
 
 def query_expenses_from_json(payload: dict) -> list[dict]:
     q = QueryDTO(**payload)              # JSON 一把塞进来

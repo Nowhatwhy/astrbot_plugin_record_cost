@@ -30,3 +30,13 @@ class Expenses:
             d["amount"] = float(d["amount"])
 
         return d
+    def __str__(self):
+        res={}
+        res["消费编号"] = self.expense_id
+        res["用户编号"] = self.user_id
+        res["类别"] = self.category
+        res["标题"] = self.title
+        res["金额"] = self.amount
+        res["消费时间"] = self.expense_time
+        res["备注"] = self.note
+        return str(res)
