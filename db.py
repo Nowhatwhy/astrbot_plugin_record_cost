@@ -10,7 +10,7 @@ from .querty_dto import QueryDTO
 #  SQLite 数据库连接
 # -----------------------------
 engine = create_engine(
-    "sqlite:///data/cost.db",  # ← 在当前目录生成 cost.db
+    "sqlite:///data/cost.db",  # ← 在data目录生成 cost.db
     echo=False,
     connect_args={"check_same_thread": False}  # SQLite 线程限制关闭
 )
@@ -22,6 +22,7 @@ def init_db():
         user_id INTEGER NOT NULL,
         category TEXT NOT NULL,
         title TEXT NOT NULL,
+        is_income BOOLEAN NOT NULL,
         amount REAL NOT NULL,
         expense_time TEXT NOT NULL,
         note TEXT,
@@ -53,7 +54,7 @@ def query_expenses(query: QueryDTO) -> List[Expenses]:
 
     base_sql = """
         SELECT
-            expense_id, user_id, category, title, amount,
+            expense_id, user_id, category, title, is_income, amount,
             expense_time, note, created_at, updated_at
         FROM expenses
         WHERE 1 = 1
@@ -154,6 +155,40 @@ def delete_expenses(expense_ids: List[int], user_id: int) -> None:
 
     params = {f"id{i}": eid for i, eid in enumerate(expense_ids)}
     params["user_id"] = user_id
+
+    with engine.begin() as conn:
+        conn.execute(text(sql), params)
+
+def update_expense(exp: Expenses) -> None:
+    """更新一条消费记录"""
+
+    if exp.expense_id is None or exp.user_id is None:
+        raise ValueError("update_expense: expense_id 和 user_id 不能为空")
+
+    fields = [
+        k for k in exp.__dict__.keys()
+        if k not in ["expense_id", "user_id", "created_at"] and exp.__dict__[k] is not None
+    ]
+
+    set_clauses = ", ".join([f"{f} = :{f}" for f in fields])
+    sql = f"""
+        UPDATE expenses
+        SET {set_clauses},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE expense_id = :expense_id
+            AND user_id = :user_id
+    """
+
+    params = {f: exp.__dict__.get(f) for f in fields}
+    params["expense_id"] = exp.expense_id
+    params["user_id"] = exp.user_id
+
+    # 处理 datetime / decimal
+    for k, v in params.items():
+        if isinstance(v, datetime.datetime):
+            params[k] = v.strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(v, Decimal):
+            params[k] = float(v)
 
     with engine.begin() as conn:
         conn.execute(text(sql), params)

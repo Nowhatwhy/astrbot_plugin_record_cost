@@ -8,6 +8,7 @@ class QueryDTO:
     user_id: Optional[int] = None
     category: Optional[str] = None
     title_keyword: Optional[str] = None  # 模糊匹配 title
+    is_income: Optional[bool] = None
     min_amount: Optional[float] = None
     max_amount: Optional[float] = None
     start_time: Optional[str] = None     # '2025-10-01 00:00:00'
